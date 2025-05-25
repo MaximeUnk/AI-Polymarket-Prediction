@@ -9,23 +9,80 @@ import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useToast } from '@/hooks/use-toast'
+import InlineSphere from './InlineSphere'
+
+// Types
+interface PredictionData {
+  title: string
+  probability: number
+  confidence: number
+  payout: number
+  category: PredictionCategory
+}
+
+type PredictionCategory = 'Sports' | 'Crypto' | 'Politics' | 'Entertainment'
+
+const PREDICTION_CATEGORIES: PredictionCategory[] = ['Sports', 'Crypto', 'Politics', 'Entertainment']
 
 export default function PredictionInterface() {
   const [eventLink, setEventLink] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [prediction, setPrediction] = useState<{
-    title: string
-    probability: number
-    confidence: number
-    payout: number
-    category: string
-  } | null>(null)
+  const [prediction, setPrediction] = useState<PredictionData | null>(null)
   const { toast } = useToast()
+
+  // Common styles
+  const badgeStyles = "bg-[#00ffff]/10 text-[#00ffff] border-[#00ffff] text-lg px-4 py-2 rounded-xl hover:bg-[#00ffff]/20 transition-colors"
+  const statCardStyles = "p-6 text-center"
+  const statValueStyles = "font-bold text-white mb-2"
+  const statLabelStyles = "text-white/90"
+
+  // Reusable stat card component
+  interface StatCardProps {
+    value: string | number
+    label: string
+    gradientClass: string
+    borderClass: string
+    showProgress?: boolean
+    valueSize?: string
+  }
+
+  const StatCard = ({ 
+    value, 
+    label, 
+    gradientClass, 
+    borderClass, 
+    showProgress = false,
+    valueSize = "text-4xl" 
+  }: StatCardProps) => (
+    <Card className={`${gradientClass} ${borderClass} card-hover`}>
+      <CardContent className={statCardStyles}>
+        <div className={`${valueSize} ${statValueStyles}`}>
+          {value}
+        </div>
+        <div className={statLabelStyles}>{label}</div>
+        {showProgress && <Progress value={Number(value)} className="mt-2" />}
+      </CardContent>
+    </Card>
+  )
+
+  // Loading spinner component
+  const LoadingSpinner = () => (
+    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-black" />
+  )
+
+  // Mock data generation with proper types
+  const generateMockPrediction = (): PredictionData => ({
+    title: "Will Bitcoin reach $100k by end of 2024?",
+    probability: Math.floor(Math.random() * 100) + 1,
+    confidence: Math.floor(Math.random() * 30) + 70,
+    payout: Number((Math.random() * 5 + 1).toFixed(2)),
+    category: PREDICTION_CATEGORIES[Math.floor(Math.random() * PREDICTION_CATEGORIES.length)]
+  })
 
   const handlePredict = async () => {
     if (!eventLink.trim()) {
       toast({
-        title: "📊 Hold up!",
+        title: "Hold up!",
         description: "Please enter an event link to make a prediction",
         variant: "destructive"
       })
@@ -36,15 +93,7 @@ export default function PredictionInterface() {
     
     // Simulate API call with realistic delay
     setTimeout(() => {
-      // Mock prediction data for demo
-      const mockPrediction = {
-        title: "Will Bitcoin reach $100k by end of 2024?",
-        probability: Math.floor(Math.random() * 100) + 1,
-        confidence: Math.floor(Math.random() * 30) + 70,
-        payout: Number((Math.random() * 5 + 1).toFixed(2)),
-        category: ["Sports", "Crypto", "Politics", "Entertainment"][Math.floor(Math.random() * 4)]
-      }
-      
+      const mockPrediction = generateMockPrediction()
       setPrediction(mockPrediction)
       setIsLoading(false)
       
@@ -61,52 +110,57 @@ export default function PredictionInterface() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 p-4">
+    <div className="min-h-screen p-6 bg-black">
+      {/* Sphere background - absolute center */}
+      <div className="fixed left-1/4 top-0/3 -translate-x-1/4 -translate-y-1/4 pointer-events-none">
+        <InlineSphere />
+      </div>
+
       <div className="max-w-4xl mx-auto relative z-10">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-6xl font-bold bg-gradient-to-r from-yellow-300 via-yellow-400 to-yellow-500 bg-clip-text text-transparent mb-4 animate-pulse">
+          <h1 className="text-6xl font-bold text-[#00ffff] mb-4">
             POLYMARKET PREDICTIONS
           </h1>
-          <p className="text-xl text-yellow-300 font-semibold">
-            Predict the future with data-driven insights! 🚀
+          <p className="text-xl text-[#00ffff] font-semibold">
+            Predict the future with data-driven insights
           </p>
-          <div className="flex justify-center space-x-4 mt-4">
-            <Badge variant="secondary" className="bg-yellow-500/20 text-yellow-300 border-yellow-500">
-              🔥 Trending Markets
+          <div className="flex justify-center space-x-5 mt-4">
+            <Badge variant="secondary" className={badgeStyles}>
+              High Returns
             </Badge>
-            <Badge variant="secondary" className="bg-green-500/20 text-green-300 border-green-500">
-              💰 High Returns
+            <Badge variant="secondary" className={badgeStyles}>
+              Trending Markets
             </Badge>
-            <Badge variant="secondary" className="bg-purple-500/20 text-purple-300 border-purple-500">
-              📈 Hot Streaks
+            <Badge variant="secondary" className={badgeStyles}>
+              Hot Streaks
             </Badge>
           </div>
         </div>
 
         {/* Main prediction interface */}
-        <Card className="bg-gray-900/80 border-yellow-500/50 backdrop-blur-sm shadow-2xl">
+        <Card className="relative border-primary/20 bg-black/40 backdrop-blur-sm">
           <CardHeader className="text-center">
-            <CardTitle className="text-3xl text-yellow-400 flex items-center justify-center gap-2">
-              🔮 Prediction Oracle 🔮
+            <CardTitle className="text-3xl text-[#00ffff] flex items-center justify-center gap-2">
+              Prediction Oracle
             </CardTitle>
             <CardDescription className="text-gray-300 text-lg">
-              Drop your event link and let the analysis begin!
+              Drop your event link and let the analysis begin
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             {!prediction ? (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="event-link" className="text-yellow-400 font-semibold text-lg">
-                    Event Link 🔗
+                  <Label htmlFor="event-link" className="text-[#00ffff] font-semibold text-lg">
+                    Event Link
                   </Label>
                   <Input
                     id="event-link"
-                    placeholder="https://example.com/event-to-predict"
+                    placeholder="https://polymarket.com/event-to-predict"
                     value={eventLink}
                     onChange={(e) => setEventLink(e.target.value)}
-                    className="bg-gray-800 border-yellow-500/30 text-white placeholder-gray-400 text-lg py-6"
+                    className="bg-input border-border text-foreground placeholder-muted-foreground text-lg py-6"
                     disabled={isLoading}
                   />
                 </div>
@@ -114,22 +168,22 @@ export default function PredictionInterface() {
                 <Button
                   onClick={handlePredict}
                   disabled={isLoading}
-                  className="w-full py-6 text-xl font-bold bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-black transition-all duration-300 transform hover:scale-105"
+                  className="w-full py-6 text-xl font-bold bg-gradient-to-r from-[#00ffff] to-[#0099ff] hover:from-[#00ffff]/90 hover:to-[#0099ff]/90 text-black transition-all duration-300 transform hover:scale-105 rounded-xl"
                 >
                   {isLoading ? (
                     <div className="flex items-center gap-3">
-                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-black"></div>
-                      📊 Analyzing data...
+                      <LoadingSpinner />
+                      ANALYZING DATA...
                     </div>
                   ) : (
-                    "🚀 ANALYZE & PREDICT! 🚀"
+                    "ANALYZE & PREDICT"
                   )}
                 </Button>
 
                 {isLoading && (
                   <div className="text-center space-y-4">
-                    <div className="text-yellow-400 animate-pulse text-lg">
-                      🔮 Processing market data...
+                    <div className="text-[#00ffff] animate-pulse text-lg">
+                      Processing market data...
                     </div>
                     <Progress value={75} className="w-full" />
                   </div>
@@ -139,49 +193,39 @@ export default function PredictionInterface() {
               <div className="space-y-6">
                 {/* Prediction Results */}
                 <div className="text-center">
-                  <h2 className="text-2xl font-bold text-yellow-400 mb-2">🎉 ANALYSIS COMPLETE! 🎉</h2>
-                  <p className="text-gray-300 text-lg">{prediction.title}</p>
+                  <h2 className="text-2xl font-bold text-[#00ffff] mb-2">ANALYSIS COMPLETE</h2>
+                  <p className="text-foreground text-lg">{prediction.title}</p>
                 </div>
 
                 {/* Prediction Stats */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <Card className="bg-gradient-to-br from-green-900/50 to-green-800/50 border-green-500">
-                    <CardContent className="p-6 text-center">
-                      <div className="text-4xl font-bold text-green-400 mb-2">
-                        {prediction.probability}%
-                      </div>
-                      <div className="text-green-300">Probability</div>
-                      <Progress value={prediction.probability} className="mt-2" />
-                    </CardContent>
-                  </Card>
-
-                  <Card className="bg-gradient-to-br from-blue-900/50 to-blue-800/50 border-blue-500">
-                    <CardContent className="p-6 text-center">
-                      <div className="text-4xl font-bold text-blue-400 mb-2">
-                        {prediction.confidence}%
-                      </div>
-                      <div className="text-blue-300">Confidence</div>
-                      <Progress value={prediction.confidence} className="mt-2" />
-                    </CardContent>
-                  </Card>
-
-                  <Card className="bg-gradient-to-br from-yellow-900/50 to-yellow-800/50 border-yellow-500">
-                    <CardContent className="p-6 text-center">
-                      <div className="text-4xl font-bold text-yellow-400 mb-2">
-                        {prediction.payout}x
-                      </div>
-                      <div className="text-yellow-300">Potential Return</div>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="bg-gradient-to-br from-purple-900/50 to-purple-800/50 border-purple-500">
-                    <CardContent className="p-6 text-center">
-                      <div className="text-2xl font-bold text-purple-400 mb-2">
-                        {prediction.category}
-                      </div>
-                      <div className="text-purple-300">Category</div>
-                    </CardContent>
-                  </Card>
+                  <StatCard
+                    value={`${prediction.probability}%`}
+                    label="Probability"
+                    gradientClass="gradient-card-dice"
+                    borderClass="border-green-500"
+                    showProgress={true}
+                  />
+                  <StatCard
+                    value={`${prediction.confidence}%`}
+                    label="Confidence"
+                    gradientClass="gradient-card-roulette"
+                    borderClass="border-blue-500"
+                    showProgress={true}
+                  />
+                  <StatCard
+                    value={`${prediction.payout}x`}
+                    label="Potential Return"
+                    gradientClass="gradient-card-crash"
+                    borderClass="border-orange-500"
+                  />
+                  <StatCard
+                    value={prediction.category}
+                    label="Category"
+                    gradientClass="gradient-card-keno"
+                    borderClass="border-purple-500"
+                    valueSize="text-2xl"
+                  />
                 </div>
 
                 {/* Action buttons */}
@@ -189,11 +233,11 @@ export default function PredictionInterface() {
                   <Button
                     onClick={resetPrediction}
                     variant="outline"
-                    className="flex-1 py-4 text-lg border-yellow-500 text-yellow-400 hover:bg-yellow-500/10"
+                    className="flex-1 py-4 text-lg border-primary text-primary hover:bg-primary/10"
                   >
                     🔄 New Prediction
                   </Button>
-                  <Button className="flex-1 py-4 text-lg bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-black font-bold">
+                  <Button className="flex-1 py-4 text-lg bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold">
                     📈 Make Prediction
                   </Button>
                 </div>
@@ -201,23 +245,6 @@ export default function PredictionInterface() {
             )}
           </CardContent>
         </Card>
-
-        {/* Footer */}
-        <div className="text-center mt-8 space-y-4">
-          <div className="flex justify-center items-center gap-4">
-            <Avatar>
-              <AvatarImage src="/api/placeholder/40/40" />
-              <AvatarFallback className="bg-yellow-500 text-black">📊</AvatarFallback>
-            </Avatar>
-            <div className="text-yellow-400">
-              <div className="font-bold">Prediction AI</div>
-              <div className="text-sm text-gray-400">Your market analysis oracle</div>
-            </div>
-          </div>
-          <p className="text-gray-400 text-sm">
-            📊 Remember: Predictions are for informational purposes. Trade responsibly! 📊
-          </p>
-        </div>
       </div>
     </div>
   )

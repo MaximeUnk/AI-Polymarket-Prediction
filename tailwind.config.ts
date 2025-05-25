@@ -9,6 +9,12 @@ export default {
   ],
   theme: {
   	extend: {
+      fontFamily: {
+        'sourceCode': ['var(--font-source-code)', 'monospace'],
+      },
+      letterSpacing: {
+        'cyber': '0.05em',
+      },
   		colors: {
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
