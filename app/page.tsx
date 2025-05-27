@@ -1,4 +1,4 @@
-import PredictionInterface from '../main/components/PredictionInterface'
+import PredictionInterface from '../src/components/PredictionInterface'
 
 export default function Home() {
   return (

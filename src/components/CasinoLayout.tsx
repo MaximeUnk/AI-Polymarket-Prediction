@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, User, Bell, MessageCircle } from 'lucide-react';
+import { Search, Bell, MessageCircle } from 'lucide-react';
 
 interface CasinoLayoutProps {
   children: React.ReactNode;
