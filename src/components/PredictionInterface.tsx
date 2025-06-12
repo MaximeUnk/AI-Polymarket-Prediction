@@ -507,7 +507,7 @@ function detectMultiOutcomeMarket(marketRules: string): { isMultiOutcome: boolea
     /majority\s+\((?:more\s+than\s+)?(\d+)%\)/i
   ]
   
-  let percentageThresholds = []
+  const percentageThresholds: number[] = []
   for (const pattern of percentageAllocationPatterns) {
     const matches = rulesText.matchAll(new RegExp(pattern.source, 'gi'))
     for (const match of matches) {
@@ -829,13 +829,13 @@ export default function PredictionInterface() {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="bg-orange-900/20 p-4 rounded-lg border border-orange-600/30">
-                      <h4 className="text-orange-300 font-semibold mb-2">Why can't this be analyzed?</h4>
+                      <h4 className="text-orange-300 font-semibold mb-2">Why can&apos;t this be analyzed?</h4>
                       <p className="text-gray-300 text-sm leading-relaxed mb-3">
                         {prediction.multiOutcomeReason}
                       </p>
                       <p className="text-gray-300 text-sm leading-relaxed">
                         This tool is designed for <strong>binary Yes/No predictions</strong> only. 
-                        Markets with multiple possible outcomes (like elections, competitions, or "who will win" questions) 
+                        Markets with multiple possible outcomes (like elections, competitions, or &quot;who will win&quot; questions) 
                         require different analysis methods.
                       </p>
                     </div>
@@ -843,9 +843,9 @@ export default function PredictionInterface() {
                     <div className="bg-blue-900/20 p-4 rounded-lg border border-blue-600/30">
                       <h4 className="text-blue-300 font-semibold mb-2">What markets work with this tool?</h4>
                       <div className="text-gray-300 text-sm space-y-1">
-                        <p>✅ "Will X happen by Y date?"</p>
-                        <p>✅ "Will X reach Y price?"</p>
-                        <p>✅ "Will X be approved/rejected?"</p>
+                        <p>✅ &quot;Will X happen by Y date?&quot;</p>
+                        <p>✅ &quot;Will X reach Y price?&quot;</p>
+                        <p>✅ &quot;Will X be approved/rejected?&quot;</p>
                         <p>✅ Any market with only <strong>YES</strong> or <strong>NO</strong> outcomes</p>
                       </div>
                     </div>
@@ -854,7 +854,7 @@ export default function PredictionInterface() {
                       <h4 className="text-purple-300 font-semibold mb-2">Coming Soon</h4>
                       <p className="text-gray-300 text-sm leading-relaxed">
                         Multi-outcome market analysis is planned for a future update. 
-                        We're working on advanced algorithms to handle complex prediction scenarios.
+                        We&apos;re working on advanced algorithms to handle complex prediction scenarios.
                       </p>
                     </div>
                     
@@ -1029,7 +1029,7 @@ export default function PredictionInterface() {
                       <Card className="bg-gradient-to-r from-gray-900/50 to-slate-900/50 border-gray-500/50">
                         <CardHeader>
                           <CardTitle className="text-xl text-gray-400">
-                            🔗 Sources & References
+                            🔗 Sources &amp; References
                           </CardTitle>
                         </CardHeader>
                         <CardContent>
