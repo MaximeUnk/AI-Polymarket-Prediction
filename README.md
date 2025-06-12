@@ -1,4 +1,4 @@
-# 📊 Polymarket Predictions - Predict the Future! 📊
+# 🔮 Crystal Poly - See the Future! 🔮
 
 A sophisticated prediction interface for making forecasts on events. Built with Next.js, TypeScript, Tailwind CSS, and shadcn/ui components.
 
@@ -37,7 +37,7 @@ This is a modern prediction interface where users can:
 1. Clone the repository:
 ```bash
 git clone <your-repo-url>
-cd polymarket-predictions
+cd crystal-poly
 ```
 
 2. Install dependencies:

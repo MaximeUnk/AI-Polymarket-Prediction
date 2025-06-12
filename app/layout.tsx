@@ -21,8 +21,8 @@ const sourceCode = Source_Code_Pro({
 });
 
 export const metadata: Metadata = {
-  title: "📊 Polymarket Predictions - Predict the Future",
-  description: "Make informed predictions on future events with AI-powered insights! Advanced prediction interface for market events.",
+  title: "🔮 Crystal Poly - See the Future",
+  description: "A sophisticated prediction interface for making forecasts on events.",
 };
 
 export default function RootLayout({

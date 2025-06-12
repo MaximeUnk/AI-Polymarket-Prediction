@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { TypeAnimation } from 'react-type-animation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -601,6 +602,7 @@ export default function PredictionInterface() {
   const [prediction, setPrediction] = useState<PredictionData | null>(null)
   const [isForExpanded, setIsForExpanded] = useState(false)
   const [isAgainstExpanded, setIsAgainstExpanded] = useState(false)
+  const [isRulesExpanded, setIsRulesExpanded] = useState(false)
   const { toast } = useToast()
 
   // Common styles
@@ -731,6 +733,7 @@ export default function PredictionInterface() {
     setEventLink('')
     setIsForExpanded(false)
     setIsAgainstExpanded(false)
+    setIsRulesExpanded(false)
   }
 
   return (
@@ -743,45 +746,41 @@ export default function PredictionInterface() {
       <div className="max-w-6xl mx-auto relative z-10">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-6xl font-bold text-[#00ffff] mb-4">
-            POLYMARKET PREDICTIONS
+          <h1 className="text-4xl md:text-6xl font-bold text-[#00ffff] mb-4 flex items-center justify-center">
+            <span className="mx-2">🔮</span>
+            <span>Crystal Poly</span>
+            <span className="mx-2">🔮</span>
           </h1>
-          <p className="text-xl text-[#00ffff] font-semibold">
-            Predict the future with data-driven insights
-          </p>
-          <div className="flex justify-center space-x-5 mt-4">
-            <Badge variant="secondary" className={badgeStyles}>
-              High Returns
-            </Badge>
-            <Badge variant="secondary" className={badgeStyles}>
-              Trending Markets
-            </Badge>
-            <Badge variant="secondary" className={badgeStyles}>
-              Hot Streaks
-            </Badge>
-          </div>
+          <TypeAnimation
+            sequence={[
+              'See the future with crystal-clear predictions',
+            ]}
+            wrapper="p"
+            speed={50}
+            className="text-lg md:text-xl text-[#00ffff] font-semibold"
+          />
         </div>
 
         {/* Main prediction interface */}
         <Card className="relative border-primary/20 bg-black/40 backdrop-blur-sm">
-          <CardHeader className="text-center">
-            <CardTitle className="text-3xl text-[#00ffff] flex items-center justify-center gap-2">
-              Prediction Oracle
-            </CardTitle>
-            <CardDescription className="text-gray-300 text-lg">
-              Drop your event link and let the analysis begin
-            </CardDescription>
+          <CardHeader className="text-center px-4 pt-6 md:px-6">
+            <p className="text-base md:text-lg text-gray-200 mt-2 max-w-2xl mx-auto">
+              Leverage AI-powered analysis to gain predictive insights into market events. Our oracle processes market data to forecast binary outcomes with detailed arguments for and against.
+            </p>
             <div className="bg-blue-900/30 border border-blue-500/50 rounded-lg p-3 mt-4">
               <p className="text-blue-300 text-sm text-center">
                 ℹ️ This tool only works for <strong>binary Yes/No predictions</strong>. Multi-outcome markets will be supported soon.
               </p>
             </div>
+            <CardDescription className="text-base md:text-lg text-gray-300 mt-4">
+              Drop your event link and let the analysis begin
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             {!prediction ? (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="event-link" className="text-[#00ffff] font-semibold text-lg">
+                  <Label htmlFor="event-link" className="text-[#00ffff] font-semibold text-base md:text-lg">
                     Event Link
                   </Label>
                   <Input
@@ -789,7 +788,7 @@ export default function PredictionInterface() {
                     placeholder="https://polymarket.com/event-to-predict"
                     value={eventLink}
                     onChange={(e) => setEventLink(e.target.value)}
-                    className="bg-input border-border text-foreground placeholder-muted-foreground text-lg py-6"
+                    className="bg-input border-border text-foreground placeholder-muted-foreground text-base md:text-lg py-4 md:py-6"
                     disabled={isLoading}
                   />
                 </div>
@@ -797,7 +796,7 @@ export default function PredictionInterface() {
                 <Button
                   onClick={handlePredict}
                   disabled={isLoading}
-                  className="w-full py-6 text-xl font-bold bg-gradient-to-r from-[#00ffff] to-[#0099ff] hover:from-[#00ffff]/90 hover:to-[#0099ff]/90 text-black transition-all duration-300 transform hover:scale-105 rounded-xl"
+                  className="w-full py-4 md:py-6 text-lg md:text-xl font-bold bg-gradient-to-r from-[#00ffff] to-[#0099ff] hover:from-[#00ffff]/90 hover:to-[#0099ff]/90 text-black transition-all duration-300 transform hover:scale-105 rounded-xl"
                 >
                   {isLoading ? (
                     <div className="flex items-center gap-3">
@@ -823,7 +822,7 @@ export default function PredictionInterface() {
               <div className="space-y-6">
                 <Card className="bg-gradient-to-r from-orange-900/50 to-yellow-900/50 border-orange-500/50">
                   <CardHeader>
-                    <CardTitle className="text-2xl text-orange-400 text-center flex items-center justify-center gap-2">
+                    <CardTitle className="text-xl md:text-2xl text-orange-400 text-center flex items-center justify-center gap-2">
                       ⚠️ Multi-Outcome Market Detected
                     </CardTitle>
                   </CardHeader>
@@ -877,16 +876,24 @@ export default function PredictionInterface() {
                     {/* Market Header */}
                     <Card className="bg-gradient-to-r from-purple-900/50 to-blue-900/50 border-purple-500/50">
                       <CardHeader>
-                        <CardTitle className="text-2xl text-[#00ffff] text-center">
+                        <CardTitle className="text-xl md:text-2xl text-[#00ffff] text-center">
                           📊 {prediction.parsedResponse.marketInfo.title}
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
                         <div className="bg-gray-900/50 p-4 rounded-lg">
                           <h4 className="text-white font-semibold mb-2">Market Rules:</h4>
-                          <p className="text-gray-300 text-sm leading-relaxed">
+                          <p
+                            className={`text-gray-300 text-sm leading-relaxed ${!isRulesExpanded ? 'line-clamp-3' : ''}`}
+                          >
                             {prediction.parsedResponse.marketInfo.rules}
                           </p>
+                          <button
+                            onClick={() => setIsRulesExpanded(!isRulesExpanded)}
+                            className="text-blue-400 hover:text-blue-300 text-sm mt-2 font-semibold"
+                          >
+                            {isRulesExpanded ? 'Show Less' : 'Show More...'}
+                          </button>
                         </div>
                       </CardContent>
                     </Card>
@@ -896,15 +903,15 @@ export default function PredictionInterface() {
                       {/* YES Odds */}
                       <Card className="bg-gradient-to-r from-green-900/50 to-emerald-900/50 border-green-500/50">
                         <CardHeader>
-                          <CardTitle className="text-xl text-green-400 text-center">
+                          <CardTitle className="text-lg md:text-xl text-green-400 text-center">
                             ✅ YES
                           </CardTitle>
                         </CardHeader>
                         <CardContent className="text-center">
-                          <div className="text-4xl font-bold text-green-300 mb-2">
+                          <div className="text-3xl md:text-4xl font-bold text-green-300 mb-2">
                             {prediction.parsedResponse.predictionOdds.yesOdds}
                           </div>
-                          <p className="text-green-200 text-sm font-medium">
+                          <p className="text-sm text-green-200 font-medium">
                             Chance of happening
                           </p>
                         </CardContent>
@@ -913,15 +920,15 @@ export default function PredictionInterface() {
                       {/* NO Odds */}
                       <Card className="bg-gradient-to-r from-red-900/50 to-pink-900/50 border-red-500/50">
                         <CardHeader>
-                          <CardTitle className="text-xl text-red-400 text-center">
+                          <CardTitle className="text-lg md:text-xl text-red-400 text-center">
                             ❌ NO
                           </CardTitle>
                         </CardHeader>
                         <CardContent className="text-center">
-                          <div className="text-4xl font-bold text-red-300 mb-2">
+                          <div className="text-3xl md:text-4xl font-bold text-red-300 mb-2">
                             {prediction.parsedResponse.predictionOdds.noOdds}
                           </div>
-                          <p className="text-red-200 text-sm font-medium">
+                          <p className="text-sm text-red-200 font-medium">
                             Chance of NOT happening
                           </p>
                         </CardContent>
@@ -932,7 +939,7 @@ export default function PredictionInterface() {
                     {prediction.parsedResponse.pointsFor.length > 0 && (
                       <Card className="bg-gradient-to-r from-green-900/30 to-emerald-900/30 border-green-500/30">
                         <CardHeader>
-                          <CardTitle className="text-xl text-green-400">
+                          <CardTitle className="text-lg md:text-xl text-green-400">
                             ✅ Arguments FOR
                           </CardTitle>
                         </CardHeader>
@@ -980,7 +987,7 @@ export default function PredictionInterface() {
                     {prediction.parsedResponse.pointsAgainst.length > 0 && (
                       <Card className="bg-gradient-to-r from-red-900/30 to-pink-900/30 border-red-500/30">
                         <CardHeader>
-                          <CardTitle className="text-xl text-red-400">
+                          <CardTitle className="text-lg md:text-xl text-red-400">
                             ❌ Arguments AGAINST
                           </CardTitle>
                         </CardHeader>
@@ -1028,7 +1035,7 @@ export default function PredictionInterface() {
                     {prediction.parsedResponse.sources.length > 0 && (
                       <Card className="bg-gradient-to-r from-gray-900/50 to-slate-900/50 border-gray-500/50">
                         <CardHeader>
-                          <CardTitle className="text-xl text-gray-400">
+                          <CardTitle className="text-lg md:text-xl text-gray-400">
                             🔗 Sources &amp; References
                           </CardTitle>
                         </CardHeader>
@@ -1053,16 +1060,16 @@ export default function PredictionInterface() {
                 )}
 
                 {/* Action buttons */}
-                <div className="flex gap-4 pt-4">
+                <div className="flex flex-col md:flex-row gap-4 pt-4">
                   <Button
                     onClick={resetPrediction}
                     variant="outline"
-                    className="flex-1 py-4 text-lg border-primary text-primary hover:bg-primary/10"
+                    className="flex-1 py-3 md:py-4 text-base md:text-lg border-primary text-primary hover:bg-primary/10"
                   >
                     🔄 New Request
                   </Button>
                   <Button 
-                    className="flex-1 py-4 text-lg bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold"
+                    className="flex-1 py-3 md:py-4 text-base md:text-lg bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold"
                     onClick={() => navigator.clipboard.writeText(prediction.apiResponse || '')}
                   >
                     📋 Copy Response
