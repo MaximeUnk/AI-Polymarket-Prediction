@@ -764,15 +764,12 @@ export default function PredictionInterface() {
         {/* Main prediction interface */}
         <Card className="relative border-primary/20 bg-black/40 backdrop-blur-sm">
           <CardHeader className="text-center px-4 pt-6 md:px-6">
-            <p className="text-base md:text-lg text-gray-200 mt-2 max-w-2xl mx-auto">
-              Leverage AI-powered analysis to gain predictive insights into market events. Our oracle processes market data to forecast binary outcomes with detailed arguments for and against.
-            </p>
-            <div className="bg-blue-900/30 border border-blue-500/50 rounded-lg p-3 mt-4">
-              <p className="text-blue-300 text-sm text-center">
-                ℹ️ This tool only works for <strong>binary Yes/No predictions</strong>. Multi-outcome markets will be supported soon.
+            <div className="border border-primary/20 rounded-lg p-4 max-w-3xl mx-auto bg-purple-900/30 backdrop-blur-sm">
+              <p className="text-base md:text-lg text-gray-200">
+                Leverage AI-powered analysis to gain predictive insights into market events. Our oracle processes market data to forecast binary outcomes with detailed arguments for and against.
               </p>
             </div>
-            <CardDescription className="text-base md:text-lg text-gray-300 mt-4">
+            <CardDescription className="text-xl md:text-2xl text-gray-300 mt-4 font-bold">
               Drop your event link and let the analysis begin
             </CardDescription>
           </CardHeader>
@@ -791,6 +788,12 @@ export default function PredictionInterface() {
                     className="bg-input border-border text-foreground placeholder-muted-foreground text-base md:text-lg py-4 md:py-6"
                     disabled={isLoading}
                   />
+                </div>
+
+                <div className="bg-blue-900/30 border border-blue-500/50 rounded-lg p-3">
+                  <p className="text-blue-300 text-sm text-center">
+                    ℹ️ This tool only works for <strong>binary Yes/No predictions</strong>. Multi-outcome markets will be supported soon.
+                  </p>
                 </div>
 
                 <Button
