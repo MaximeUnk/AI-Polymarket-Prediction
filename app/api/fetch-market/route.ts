@@ -70,7 +70,7 @@ async function fetchMarketRulesBySlug(slug: string): Promise<string> {
  * Get prediction analysis from x.ai API using market rules
  */
 async function getPredictionAnalysis(marketRules: string): Promise<string> {
-  const apiKey = "xai-hTyB9Ux7ECjYTRhNIMywhQV6YMl0rnmywIeAiLz1UEigIrxbwV74GmyKxHOWW6JzJObjNv2vZl2HHTEQ";
+  const apiKey = "xai-1Rn0yIHkPGBSeYD3Ba8G5uJoIQR39jlLDlbwpaJ9X6dA7h6gUnXyRr2ueVrM89Pa2GaJImeHColVFsZl";
   const apiUrl = "https://api.x.ai/v1/chat/completions";
   
   const systemPrompt = `You are an expert prediction analyst specializing in binary Yes/No market forecasting. 
