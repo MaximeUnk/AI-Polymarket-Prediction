@@ -172,8 +172,8 @@ function parseAIResponse(response: string): ParsedResponse {
       noOdds = `${100 - firstPercentage}%`
     } else {
       // Default fallback
-      yesOdds = '50%'
-      noOdds = '50%'
+      yesOdds = 'N/A'
+      noOdds = 'N/A'
     }
   }
   
@@ -243,7 +243,7 @@ function parseAIResponse(response: string): ParsedResponse {
       console.log('FOR matches found:', forMatches.length)
       forMatches.forEach((match, index) => {
         console.log(`FOR match ${index + 1}:`, match.substring(0, 100) + '...')
-        const cleanMatch = match.trim().replace(/^[\d\*\-\s]+/, '').trim()
+        const cleanMatch = match.trim().replace(/^[\d\*\-\s\.]+/, '').trim()
         if (cleanMatch) {
           const lines = cleanMatch.split('\n').map(line => line.trim()).filter(line => line)
           const firstLine = lines[0] || ''
@@ -253,22 +253,22 @@ function parseAIResponse(response: string): ParsedResponse {
           
           if (firstLine.includes(':')) {
             const colonIndex = firstLine.indexOf(':')
-            title = firstLine.substring(0, colonIndex).trim()
-            content = firstLine.substring(colonIndex + 1).trim()
+            title = firstLine.substring(0, colonIndex).trim().replace(/^[\.\s]+/, '')
+            content = firstLine.substring(colonIndex + 1).trim().replace(/^[\.\s]+/, '')
             if (lines.length > 1) {
               content += ' ' + lines.slice(1).join(' ')
             }
           } else {
             const words = firstLine.split(' ')
             if (words.length > 4) {
-              title = words.slice(0, 4).join(' ')
-              content = words.slice(4).join(' ')
+              title = words.slice(0, 4).join(' ').replace(/^[\.\s]+/, '')
+              content = words.slice(4).join(' ').replace(/^[\.\s]+/, '')
               if (lines.length > 1) {
                 content += ' ' + lines.slice(1).join(' ')
               }
             } else {
               title = `Point ${index + 1}`
-              content = lines.join(' ')
+              content = lines.join(' ').replace(/^[\.\s]+/, '')
             }
           }
           
@@ -337,7 +337,7 @@ function parseAIResponse(response: string): ParsedResponse {
       console.log('AGAINST matches found:', againstMatches.length)
       againstMatches.forEach((match, index) => {
         console.log(`AGAINST match ${index + 1}:`, match.substring(0, 100) + '...')
-        const cleanMatch = match.trim().replace(/^[\d\*\-\s]+/, '').trim()
+        const cleanMatch = match.trim().replace(/^[\d\*\-\s\.]+/, '').trim()
         if (cleanMatch) {
           const lines = cleanMatch.split('\n').map(line => line.trim()).filter(line => line)
           const firstLine = lines[0] || ''
@@ -347,22 +347,22 @@ function parseAIResponse(response: string): ParsedResponse {
           
           if (firstLine.includes(':')) {
             const colonIndex = firstLine.indexOf(':')
-            title = firstLine.substring(0, colonIndex).trim()
-            content = firstLine.substring(colonIndex + 1).trim()
+            title = firstLine.substring(0, colonIndex).trim().replace(/^[\.\s]+/, '')
+            content = firstLine.substring(colonIndex + 1).trim().replace(/^[\.\s]+/, '')
             if (lines.length > 1) {
               content += ' ' + lines.slice(1).join(' ')
             }
           } else {
             const words = firstLine.split(' ')
             if (words.length > 4) {
-              title = words.slice(0, 4).join(' ')
-              content = words.slice(4).join(' ')
+              title = words.slice(0, 4).join(' ').replace(/^[\.\s]+/, '')
+              content = words.slice(4).join(' ').replace(/^[\.\s]+/, '')
               if (lines.length > 1) {
                 content += ' ' + lines.slice(1).join(' ')
               }
             } else {
               title = `Point ${index + 1}`
-              content = lines.join(' ')
+              content = lines.join(' ').replace(/^[\.\s]+/, '')
             }
           }
           
@@ -416,169 +416,182 @@ function parseAIResponse(response: string): ParsedResponse {
   }
 }
 
-// Function to detect if this is a multi-outcome market
+// Function to detect if this is a multi-outcome market based on market rules
 function detectMultiOutcomeMarket(marketRules: string): { isMultiOutcome: boolean, reason: string } {
-  const lowerRules = marketRules.toLowerCase()
-  const marketTitle = marketRules.split('\n')[0] || ''
+  console.log('=== MULTI-OUTCOME DETECTION (RULES-BASED) ===')
+  
+  // Extract title and rules sections
+  const lines = marketRules.split('\n')
+  const marketTitle = lines.find(line => line.startsWith('Market:'))?.replace('Market:', '').trim() || ''
+  const rulesIndex = lines.findIndex(line => line.startsWith('Rules:'))
+  const rulesText = rulesIndex >= 0 ? lines.slice(rulesIndex + 1).join('\n').toLowerCase() : marketRules.toLowerCase()
+  
+  console.log('Market title:', marketTitle)
+  console.log('Rules length:', rulesText.length)
+  
+  // STEP 1: Check for explicit binary resolution language in rules
+  const binaryResolutionPatterns = [
+    /resolve(?:s|d)?\s+(?:to\s+)?(?:"yes"|"no"|yes|no)/i,
+    /market\s+will\s+resolve\s+(?:to\s+)?(?:"yes"|"no"|yes|no)/i,
+    /this\s+market\s+will\s+be\s+(?:resolved\s+)?(?:"yes"|"no"|yes|no)/i,
+    /will\s+be\s+considered\s+(?:"yes"|"no"|yes|no)/i,
+    /only\s+two\s+possible\s+outcomes/i,
+    /binary\s+(?:outcome|market|question)/i,
+    /true\s+or\s+false/i,
+    /(?:happen|occur|take\s+place)\s+(?:by|before|during)/i
+  ]
+  
+  for (const pattern of binaryResolutionPatterns) {
+    if (pattern.test(rulesText)) {
+      console.log('Found explicit binary resolution pattern:', pattern)
+      return {
+        isMultiOutcome: false,
+        reason: `Market rules contain explicit binary resolution language`
+      }
+    }
+  }
+  
+  // STEP 2: Check for multi-outcome resolution criteria
+  const multiOutcomeResolutionPatterns = [
+    /multiple\s+possible\s+(?:outcomes|winners|results)/i,
+    /(?:candidate|option|choice)\s+(?:with\s+the\s+)?(?:most|highest|lowest)/i,
+    /(?:winner|first\s+place|champion)\s+will\s+be\s+(?:determined|decided)/i,
+    /(?:candidate|team|person|country)\s+that\s+(?:receives|gets|wins)/i,
+    /(?:election|competition|contest|tournament)\s+(?:results?|outcome)/i,
+    /(?:vote|voting|poll|polling)\s+(?:results?|outcome)/i,
+    /(?:ranked|ranking|leaderboard|standings)/i,
+    /market\s+will\s+resolve\s+to\s+the\s+(?:candidate|option|team)/i,
+    /this\s+market\s+will\s+be\s+resolved\s+based\s+on\s+(?:which|who)/i
+  ]
+  
+  for (const pattern of multiOutcomeResolutionPatterns) {
+    if (pattern.test(rulesText)) {
+      console.log('Found multi-outcome resolution pattern:', pattern)
+      return {
+        isMultiOutcome: true,
+        reason: `Market rules describe multi-outcome resolution criteria: "${rulesText.match(pattern)?.[0]}"`
+      }
+    }
+  }
+  
+  // STEP 3: Check for specific named options in rules
+  const namedOptionsPatterns = [
+    /(?:candidates?|options?|choices?)\s*(?:include|are|will\s+be)\s*:?\s*([A-Z][^.]*(?:,|and|or)[^.]*)/i,
+    /(?:following\s+(?:candidates?|options?|choices?)|possible\s+(?:outcomes?|winners?))\s*:?\s*([A-Z][^.]*(?:,|and|or)[^.]*)/i,
+    /market\s+includes?\s+(?:the\s+following\s+)?(?:candidates?|options?)\s*:?\s*([A-Z][^.]*(?:,|and|or)[^.]*)/i
+  ]
+  
+  for (const pattern of namedOptionsPatterns) {
+    const match = rulesText.match(pattern)
+    if (match) {
+      const optionsText = match[1]
+      // Count comma-separated or "and"/"or" separated options
+      const optionCount = (optionsText.match(/,/g) || []).length + 
+                         (optionsText.match(/\band\b|\bor\b/g) || []).length + 1
+      
+      if (optionCount >= 3) {
+        console.log('Found multiple named options in rules:', optionsText.substring(0, 100))
+        return {
+          isMultiOutcome: true,
+          reason: `Market rules list ${optionCount} specific options/candidates`
+        }
+      }
+    }
+  }
+  
+  // STEP 4: Check for percentage allocations or vote shares
+  const percentageAllocationPatterns = [
+    /(?:receives?|gets?|wins?)\s+(?:at\s+least\s+|more\s+than\s+|over\s+)?(\d+)%/i,
+    /(\d+)%\s+(?:or\s+more\s+)?(?:of\s+the\s+)?(?:vote|support|share)/i,
+    /threshold\s+of\s+(\d+)%/i,
+    /majority\s+\((?:more\s+than\s+)?(\d+)%\)/i
+  ]
+  
+  let percentageThresholds = []
+  for (const pattern of percentageAllocationPatterns) {
+    const matches = rulesText.matchAll(new RegExp(pattern.source, 'gi'))
+    for (const match of matches) {
+      if (match[1]) {
+        percentageThresholds.push(parseInt(match[1]))
+      }
+    }
+  }
+  
+  if (percentageThresholds.length > 0) {
+    const maxThreshold = Math.max(...percentageThresholds)
+    if (maxThreshold < 90) { // If threshold is less than 90%, likely multi-outcome
+      console.log('Found percentage thresholds suggesting multi-outcome:', percentageThresholds)
+      return {
+        isMultiOutcome: true,
+        reason: `Market rules reference percentage thresholds (${percentageThresholds.join(', ')}%) suggesting multiple possible outcomes`
+      }
+    }
+  }
+  
+  // STEP 5: Check for ranking/ordering language
+  const rankingPatterns = [
+    /(?:first|second|third)\s+(?:place|position)/i,
+    /(?:top|bottom)\s+\d+/i,
+    /(?:rank|ranking|ranked)\s+(?:highest|lowest|first)/i,
+    /(?:finish|end\s+up)\s+in\s+(?:first|last|\d+(?:st|nd|rd|th))/i,
+    /(?:leading|ahead\s+of|behind)/i
+  ]
+  
+  for (const pattern of rankingPatterns) {
+    if (pattern.test(rulesText)) {
+      console.log('Found ranking language suggesting multi-outcome:', pattern)
+      return {
+        isMultiOutcome: true,
+        reason: `Market rules contain ranking/ordering language suggesting multiple possible outcomes`
+      }
+    }
+  }
+  
+  // STEP 6: Check title for clear binary vs multi-outcome questions
   const lowerTitle = marketTitle.toLowerCase()
   
-  console.log('=== MULTI-OUTCOME DETECTION ===')
-  console.log('Market title:', marketTitle)
-  console.log('Checking for multi-outcome patterns...')
-  
-  // FIRST: Check for VERY STRONG multi-outcome indicators (these always override)
-  const veryStrongMultiOutcomeKeywords = [
-    'who will win the election', 'who will be president', 'who will be elected',
-    'which candidate will win', 'which team will win the championship',
-    'who will be the next president', 'who will be the next governor',
-    'which party will control', 'who will win the presidency',
-    'who will win the oscar', 'who will win the emmy', 'who will win the grammy',
-    'winner of the election', 'winner of the championship', 'winner of the',
-    'first place will be', 'champion will be',
-    'multiple choice', 'several options', 'various candidates',
-    'choose from the following', 'select from:', 'options include:'
+  // Strong binary indicators in title
+  const binaryTitlePatterns = [
+    /^will\s+.*\?$/i,
+    /^does\s+.*\?$/i,
+    /^is\s+.*\?$/i,
+    /^has\s+.*\?$/i,
+    /(?:above|below|over|under|exceed|reach)\s+/i,
+    /(?:happen|occur|take\s+place)\s+(?:by|before|after|during)/i
   ]
   
-  for (const keyword of veryStrongMultiOutcomeKeywords) {
-    if (lowerTitle.includes(keyword) || lowerRules.includes(keyword)) {
-      console.log('Found VERY STRONG multi-outcome indicator:', keyword)
-      return {
-        isMultiOutcome: true,
-        reason: `Market contains "${keyword}" which clearly indicates multiple specific outcomes`
-      }
-    }
-  }
-  
-  // SECOND: Check for question-based multi-outcome patterns
-  const multiOutcomeQuestionPatterns = [
-    /who will (win|be|become|get|receive|take)/i,
-    /which (candidate|team|player|person|country|party) will/i,
-    /what will be the (winner|result|outcome|champion)/i,
-    /who is most likely to (win|be|become)/i,
-    /which will (win|be selected|be chosen|come first)/i
-  ]
-  
-  for (const pattern of multiOutcomeQuestionPatterns) {
+  for (const pattern of binaryTitlePatterns) {
     if (pattern.test(lowerTitle)) {
-      // Check if it's NOT a simple binary question
-      const binaryOverrides = [
-        'will win against', 'will be above', 'will be below', 'will be over',
-        'will be under', 'will reach', 'will exceed', 'will happen',
-        'will be true', 'will be false', 'will succeed', 'will fail'
-      ]
-      
-      let isBinaryOverride = false
-      for (const override of binaryOverrides) {
-        if (lowerTitle.includes(override)) {
-          isBinaryOverride = true
-          break
-        }
-      }
-      
-      if (!isBinaryOverride) {
-        console.log('Found multi-outcome question pattern:', pattern)
+      console.log('Found binary title pattern, checking for overrides...')
+      // But check if rules still suggest multi-outcome
+      if (!rulesText.includes('candidates') && !rulesText.includes('options') && !rulesText.includes('election')) {
         return {
-          isMultiOutcome: true,
-          reason: `Market asks "${lowerTitle.match(pattern)?.[0]}" which typically has multiple possible outcomes`
+          isMultiOutcome: false,
+          reason: `Title suggests binary question and rules don't indicate multiple outcomes`
         }
       }
     }
   }
   
-  // THIRD: Check for candidate/competitor lists in title
-  const candidatePatterns = [
-    /\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\s+(?:vs?\.?|versus|or)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\s+(?:vs?\.?|versus|or)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/,
-    /\b([A-Z][a-z]+)\s*,\s*([A-Z][a-z]+)\s*,\s*([A-Z][a-z]+)/,
-    /([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\s*\/\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\s*\/\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/
+  // Strong multi-outcome indicators in title
+  const multiOutcomeTitlePatterns = [
+    /^(?:who|which)\s+will\s+(?:win|be|become)/i,
+    /^what\s+will\s+be\s+the\s+(?:winner|result|outcome)/i,
+    /winner\s+of\s+the/i,
+    /(?:election|championship|competition|contest|tournament)/i
   ]
   
-  for (const pattern of candidatePatterns) {
-    const match = marketTitle.match(pattern)
-    if (match) {
-      console.log('Found candidate list pattern:', match[0])
+  for (const pattern of multiOutcomeTitlePatterns) {
+    if (pattern.test(lowerTitle)) {
+      console.log('Found multi-outcome title pattern:', pattern)
       return {
         isMultiOutcome: true,
-        reason: `Market lists multiple candidates/options (${match.slice(1, 4).join(', ')}) indicating multiple outcomes`
+        reason: `Title asks "${pattern}" which typically indicates multiple possible outcomes`
       }
     }
   }
   
-  // FOURTH: Check for election/competition-specific keywords
-  const competitionKeywords = [
-    'election', 'primary', 'nomination', 'tournament', 'championship',
-    'competition', 'contest', 'race', 'award', 'prize', 'trophy',
-    'mvp', 'best actor', 'best film', 'best player', 'rookie of the year'
-  ]
-  
-  let hasCompetitionKeyword = false
-  for (const keyword of competitionKeywords) {
-    if (lowerTitle.includes(keyword) || lowerRules.includes(keyword)) {
-      hasCompetitionKeyword = true
-      break
-    }
-  }
-  
-  // If it has competition keywords AND asks "who/which", it's likely multi-outcome
-  if (hasCompetitionKeyword) {
-    const whoWhichPatterns = ['who will', 'which will', 'who is', 'which is', 'winner of']
-    for (const pattern of whoWhichPatterns) {
-      if (lowerTitle.includes(pattern)) {
-        console.log('Found competition + who/which pattern')
-        return {
-          isMultiOutcome: true,
-          reason: `Market combines competition context with "${pattern}" indicating multiple possible winners`
-        }
-      }
-    }
-  }
-  
-  // FIFTH: Check for multiple named entities in specific contexts
-  const properNouns = marketRules.match(/\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\b/g) || []
-  const uniqueNames = [...new Set(properNouns)]
-  
-  if (uniqueNames.length >= 3) {
-    // Check if names appear in title and seem like options
-    const namesInTitle = uniqueNames.filter(name => marketTitle.includes(name))
-    if (namesInTitle.length >= 3) {
-      console.log('Found multiple names in title:', namesInTitle.slice(0, 3))
-      return {
-        isMultiOutcome: true,
-        reason: `Market title mentions multiple people/entities (${namesInTitle.slice(0, 3).join(', ')}) suggesting multiple outcomes`
-      }
-    }
-  }
-  
-  // SIXTH: Check for option lists and multiple percentages
-  const optionPatterns = [
-    /[A-C]\)\s*[A-Z]/g,
-    /\d+\)\s*[A-Z][a-z]+/g,
-    /Option\s+[ABC]:/gi,
-    /Choice\s+\d+:/gi
-  ]
-  
-  for (const pattern of optionPatterns) {
-    const matches = marketRules.match(pattern) || []
-    if (matches.length >= 3) {
-      console.log('Found option list format:', matches.slice(0, 2))
-      return {
-        isMultiOutcome: true,
-        reason: `Market contains option list format (${matches.slice(0, 2).join(', ')}) indicating multiple choices`
-      }
-    }
-  }
-  
-  // SEVENTH: Check for multiple percentages with names
-  const namedPercentagePattern = /\d+%\s*[-:]?\s*[A-Z][a-z]+/g
-  const percentageMatches = marketRules.match(namedPercentagePattern) || []
-  if (percentageMatches.length >= 3) {
-    console.log('Found multiple named percentages:', percentageMatches.slice(0, 3))
-    return {
-      isMultiOutcome: true,
-      reason: `Market contains multiple named percentages (${percentageMatches.slice(0, 3).join(', ')}) suggesting multiple outcomes`
-    }
-  }
-  
-  console.log('No multi-outcome patterns found - defaulting to binary')
+  console.log('No clear multi-outcome indicators found - defaulting to binary')
   return { isMultiOutcome: false, reason: '' }
 }
 
