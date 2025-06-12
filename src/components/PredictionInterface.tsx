@@ -46,23 +46,24 @@ interface ParsedResponse {
 
 type PredictionCategory = 'Sports' | 'Crypto' | 'Politics' | 'Entertainment'
 
-const PREDICTION_CATEGORIES: PredictionCategory[] = ['Sports', 'Crypto', 'Politics', 'Entertainment']
+// Commented out unused constants and functions to fix ESLint errors
+// const PREDICTION_CATEGORIES: PredictionCategory[] = ['Sports', 'Crypto', 'Politics', 'Entertainment']
 
-// Helper function to get combinations of outcomes
-function getCombinations<T>(arr: T[], size: number): T[][] {
-  if (size === 1) return arr.map(item => [item])
-  const combinations: T[][] = []
+// Helper function to get combinations of outcomes - currently unused
+// function getCombinations<T>(arr: T[], size: number): T[][] {
+//   if (size === 1) return arr.map(item => [item])
+//   const combinations: T[][] = []
   
-  for (let i = 0; i < arr.length - size + 1; i++) {
-    const head = arr[i]
-    const tailCombinations = getCombinations(arr.slice(i + 1), size - 1)
-    for (const tail of tailCombinations) {
-      combinations.push([head, ...tail])
-    }
-  }
+//   for (let i = 0; i < arr.length - size + 1; i++) {
+//     const head = arr[i]
+//     const tailCombinations = getCombinations(arr.slice(i + 1), size - 1)
+//     for (const tail of tailCombinations) {
+//       combinations.push([head, ...tail])
+//     }
+//   }
   
-  return combinations
-}
+//   return combinations
+// }
 
 // Parser function to break down AI response into sections
 function parseAIResponse(response: string): ParsedResponse {
@@ -384,34 +385,34 @@ export default function PredictionInterface() {
   const statValueStyles = "font-bold text-white mb-2"
   const statLabelStyles = "text-white/90"
 
-  // Reusable stat card component
-  interface StatCardProps {
-    value: string | number
-    label: string
-    gradientClass: string
-    borderClass: string
-    showProgress?: boolean
-    valueSize?: string
-  }
+  // Reusable stat card component - currently unused, commented out to fix ESLint
+  // interface StatCardProps {
+  //   value: string | number
+  //   label: string
+  //   gradientClass: string
+  //   borderClass: string
+  //   showProgress?: boolean
+  //   valueSize?: string
+  // }
 
-  const StatCard = ({ 
-    value, 
-    label, 
-    gradientClass, 
-    borderClass, 
-    showProgress = false,
-    valueSize = "text-4xl" 
-  }: StatCardProps) => (
-    <Card className={`${gradientClass} ${borderClass} card-hover`}>
-      <CardContent className={statCardStyles}>
-        <div className={`${valueSize} ${statValueStyles}`}>
-          {value}
-        </div>
-        <div className={statLabelStyles}>{label}</div>
-        {showProgress && <Progress value={Number(value)} className="mt-2" />}
-      </CardContent>
-    </Card>
-  )
+  // const StatCard = ({ 
+  //   value, 
+  //   label, 
+  //   gradientClass, 
+  //   borderClass, 
+  //   showProgress = false,
+  //   valueSize = "text-4xl" 
+  // }: StatCardProps) => (
+  //   <Card className={`${gradientClass} ${borderClass} card-hover`}>
+  //     <CardContent className={statCardStyles}>
+  //       <div className={`${valueSize} ${statValueStyles}`}>
+  //         {value}
+  //       </div>
+  //       <div className={statLabelStyles}>{label}</div>
+  //       {showProgress && <Progress value={Number(value)} className="mt-2" />}
+  //     </CardContent>
+  //   </Card>
+  // )
 
   // Loading spinner component
   const LoadingSpinner = () => (
@@ -610,7 +611,7 @@ export default function PredictionInterface() {
                       </p>
                       <p className="text-gray-300 text-sm leading-relaxed">
                         This tool is designed for <strong>binary Yes/No predictions</strong> only. 
-                        Markets with multiple possible outcomes (like elections, competitions, or "who will win" questions) 
+                        Markets with multiple possible outcomes (like elections, competitions, or &quot;who will win&quot; questions) 
                         require different analysis methods.
                       </p>
                     </div>
@@ -618,9 +619,9 @@ export default function PredictionInterface() {
                     <div className="bg-blue-900/20 p-4 rounded-lg border border-blue-600/30">
                       <h4 className="text-blue-300 font-semibold mb-2">What markets work with this tool?</h4>
                       <div className="text-gray-300 text-sm space-y-1">
-                        <p>✅ "Will X happen by Y date?"</p>
-                        <p>✅ "Will X reach Y price?"</p>
-                        <p>✅ "Will X be approved/rejected?"</p>
+                        <p>✅ &quot;Will X happen by Y date?&quot;</p>
+                        <p>✅ &quot;Will X reach Y price?&quot;</p>
+                        <p>✅ &quot;Will X be approved/rejected?&quot;</p>
                         <p>✅ Any market with only <strong>YES</strong> or <strong>NO</strong> outcomes</p>
                       </div>
                     </div>
@@ -629,7 +630,7 @@ export default function PredictionInterface() {
                       <h4 className="text-purple-300 font-semibold mb-2">Coming Soon</h4>
                       <p className="text-gray-300 text-sm leading-relaxed">
                         Multi-outcome market analysis is planned for a future update. 
-                        We're working on advanced algorithms to handle complex prediction scenarios.
+                        We&apos;re working on advanced algorithms to handle complex prediction scenarios.
                       </p>
                     </div>
                     
