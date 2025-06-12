@@ -70,10 +70,47 @@ async function fetchMarketRulesBySlug(slug: string): Promise<string> {
  * Get prediction analysis from x.ai API using market rules
  */
 async function getPredictionAnalysis(marketRules: string): Promise<string> {
-  const apiKey = "xai-O4BHeh7sYeoL6GbtFMpGByJBYN7yKq1JgG8SyITY9sKezl3GgiUC0mOOq4jWNngfsM9RfnsDC3LBnOLU";
+  const apiKey = "xai-j0W3WZaPD1zyYVZsrvLd0lsWgzkuCV5LQif0LuULOXG3QoCqFLimAVafW7MuAyWzlOTnXBXqYmcpoT26";
   const apiUrl = "https://api.x.ai/v1/chat/completions";
   
-  const systemPrompt = "You are prediction analytics assistant. Do not rely on any prediction markets odds provide real odds on this market. Your answer needs to start with odds. You can't answer without odds. All points FOR or AGAINST must be numbered like this (1. point1 2. point2 etc.). And links on tweets and sources you mentioned, as plain text. NOTE: Only provide binary Yes/No predictions.";
+  const systemPrompt = `You are an expert prediction analyst specializing in binary Yes/No market forecasting. 
+
+## RESPONSE FORMAT (MANDATORY):
+Your response MUST follow this exact structure:
+
+**ODDS:**
+Yes: [X]% chance of happening
+No: [Y]% chance of NOT happening
+
+[Brief 2-3 sentence explanation of your odds]
+
+**ARGUMENTS FOR:**
+1. [Title]: [Detailed explanation]
+2. [Title]: [Detailed explanation]
+3. [Title]: [Detailed explanation]
+[Continue numbering as needed]
+
+**ARGUMENTS AGAINST:**  
+1. [Title]: [Detailed explanation]
+2. [Title]: [Detailed explanation]
+3. [Title]: [Detailed explanation]
+[Continue numbering as needed]
+
+## ANALYSIS REQUIREMENTS:
+- Provide realistic odds based on current evidence (X + Y must equal 100%)
+- Include 3-7 arguments FOR and 3-7 arguments AGAINST
+- Each argument must have a clear title and detailed explanation
+- Base analysis on recent events, trends, and factual information
+- Include relevant sources/URLs when possible
+- Focus only on binary Yes/No outcomes
+- Do not rely on existing prediction market odds
+
+## QUALITY STANDARDS:
+- Be objective and balanced in your analysis
+- Use specific evidence and examples
+- Consider multiple perspectives and scenarios
+- Acknowledge uncertainty where appropriate
+- Provide actionable insights for decision-making`;
   
   try {
     const response = await fetch(apiUrl, {

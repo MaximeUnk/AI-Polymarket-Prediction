@@ -46,29 +46,32 @@ interface ParsedResponse {
 
 type PredictionCategory = 'Sports' | 'Crypto' | 'Politics' | 'Entertainment'
 
-// Commented out unused constants and functions to fix ESLint errors
-// const PREDICTION_CATEGORIES: PredictionCategory[] = ['Sports', 'Crypto', 'Politics', 'Entertainment']
+const PREDICTION_CATEGORIES: PredictionCategory[] = ['Sports', 'Crypto', 'Politics', 'Entertainment']
 
-// Helper function to get combinations of outcomes - currently unused
-// function getCombinations<T>(arr: T[], size: number): T[][] {
-//   if (size === 1) return arr.map(item => [item])
-//   const combinations: T[][] = []
+// Helper function to get combinations of outcomes
+function getCombinations<T>(arr: T[], size: number): T[][] {
+  if (size === 1) return arr.map(item => [item])
+  const combinations: T[][] = []
   
-//   for (let i = 0; i < arr.length - size + 1; i++) {
-//     const head = arr[i]
-//     const tailCombinations = getCombinations(arr.slice(i + 1), size - 1)
-//     for (const tail of tailCombinations) {
-//       combinations.push([head, ...tail])
-//     }
-//   }
+  for (let i = 0; i < arr.length - size + 1; i++) {
+    const head = arr[i]
+    const tailCombinations = getCombinations(arr.slice(i + 1), size - 1)
+    for (const tail of tailCombinations) {
+      combinations.push([head, ...tail])
+    }
+  }
   
-//   return combinations
-// }
+  return combinations
+}
 
 // Parser function to break down AI response into sections
 function parseAIResponse(response: string): ParsedResponse {
   console.log('=== PARSING AI RESPONSE ===')
-  console.log('Raw response:', response)
+  console.log('Raw response length:', response.length)
+  console.log('Raw response preview:', response.substring(0, 500) + '...')
+  
+  // Log sections found
+  console.log('Looking for FOR/AGAINST sections...')
   
   // Clean up ** symbols throughout the response
   const cleanResponse = response.replace(/\*\*/g, '')
@@ -95,9 +98,13 @@ function parseAIResponse(response: string): ParsedResponse {
   let yesOdds = 'N/A'
   let noOdds = 'N/A'
   
-  // Look for odds line
+  // Look for odds line with improved patterns
   const oddsLine = predictionLines.find(line => 
-    line.toLowerCase().includes('odds:') || line.includes('%'))
+    line.toLowerCase().includes('odds:') || 
+    line.includes('%') ||
+    line.toLowerCase().includes('yes:') ||
+    line.toLowerCase().includes('no:')
+  )
   
   if (oddsLine) {
     // Try multiple patterns for Yes percentage
@@ -192,97 +199,188 @@ function parseAIResponse(response: string): ParsedResponse {
     ? predictionLines.slice(oddsIndex + 1, oddsIndex + 3).join(' ').trim() 
     : 'No explanation provided'
   
-  // Parse points FOR
+  // Parse points FOR with multiple pattern attempts
   const pointsFor: Array<{title: string, content: string}> = []
-  const forSectionRegex = /(?:Points|Arguments)\s+FOR[^:]*:([\s\S]*?)(?=(?:Points|Arguments)\s+AGAINST|$)/i
-  const forMatch = predictionSection.match(forSectionRegex)
   
-  if (forMatch && forMatch[1]) {
-    const forContent = forMatch[1].trim()
-    const forMatches = forContent.match(/(\d+\.\s*[^\n\d]*(?:\n(?!\d+\.)[^\n]*)*)/g)
+  // Try multiple patterns for FOR section
+  const forPatterns = [
+    /\*\*ARGUMENTS\s+FOR:\*\*([\s\S]*?)(?=\*\*ARGUMENTS\s+AGAINST:|\*\*Sources|$)/i,
+    /(?:Points|Arguments|Factors|Reasons)\s+FOR[^:]*:([\s\S]*?)(?=(?:Points|Arguments|Factors|Reasons)\s+(?:AGAINST|Against)|$)/i,
+    /(?:Arguments|Points)\s+(?:supporting|favoring|for)\s+(?:yes|YES)[^:]*:([\s\S]*?)(?=(?:Arguments|Points)\s+(?:against|opposing)|$)/i,
+    /(?:Pro|Pros|Positive|Supporting)\s*[:\-]?([\s\S]*?)(?=(?:Con|Cons|Negative|Against|Opposition)|$)/i,
+    /FOR[:\-\s]+([\s\S]*?)(?=AGAINST|$)/i
+  ]
+  
+  let forContent = ''
+  for (const pattern of forPatterns) {
+    const match = predictionSection.match(pattern)
+    if (match && match[1] && match[1].trim()) {
+      forContent = match[1].trim()
+      console.log('Found FOR section with pattern:', pattern)
+      break
+    }
+  }
+  
+  if (forContent) {
+    // Try different numbered list patterns with better multi-line capture
+    const listPatterns = [
+      /(\d+\.\s*[^\n]*(?:\n(?!\s*\d+\.)[^\n]*)*)/g,  // Improved: captures until next numbered item
+      /(\*\s*[^\n]*(?:\n(?!\s*\*)[^\n]*)*)/g,        // Improved: captures until next bullet
+      /-\s*([^\n]*(?:\n(?!\s*-)[^\n]*)*)/g,          // Improved: captures until next dash
+      /(\w[^\n]*(?:\n(?!\s*\d+\.|[*-]|\w+:)[^\n]*)*)/g  // General pattern
+    ]
+    
+    let forMatches: RegExpMatchArray | null = null
+    for (const pattern of listPatterns) {
+      forMatches = forContent.match(pattern)
+      if (forMatches && forMatches.length > 0) {
+        console.log('Found FOR items with pattern:', pattern)
+        break
+      }
+    }
     
     if (forMatches) {
-      forMatches.forEach((match) => {
-        const lines = match.trim().split('\n').map(line => line.trim()).filter(line => line)
-        const firstLine = lines[0] || ''
-        
-        const withoutNumber = firstLine.replace(/^\d+\.\s*/, '').trim()
-        let title = ''
-        let content = ''
-        
-        if (withoutNumber.includes(':')) {
-          const colonIndex = withoutNumber.indexOf(':')
-          title = withoutNumber.substring(0, colonIndex).trim()
-          content = withoutNumber.substring(colonIndex + 1).trim()
-          if (lines.length > 1) {
-            content += ' ' + lines.slice(1).join(' ')
-          }
-        } else {
-          if (lines.length > 1) {
-            title = withoutNumber
-            content = lines.slice(1).join(' ')
+      console.log('FOR matches found:', forMatches.length)
+      forMatches.forEach((match, index) => {
+        console.log(`FOR match ${index + 1}:`, match.substring(0, 100) + '...')
+        const cleanMatch = match.trim().replace(/^[\d\*\-\s]+/, '').trim()
+        if (cleanMatch) {
+          const lines = cleanMatch.split('\n').map(line => line.trim()).filter(line => line)
+          const firstLine = lines[0] || ''
+          
+          let title = ''
+          let content = ''
+          
+          if (firstLine.includes(':')) {
+            const colonIndex = firstLine.indexOf(':')
+            title = firstLine.substring(0, colonIndex).trim()
+            content = firstLine.substring(colonIndex + 1).trim()
+            if (lines.length > 1) {
+              content += ' ' + lines.slice(1).join(' ')
+            }
           } else {
-            const words = withoutNumber.split(' ')
-            if (words.length > 3) {
-              title = words.slice(0, 3).join(' ')
-              content = words.slice(3).join(' ')
+            const words = firstLine.split(' ')
+            if (words.length > 4) {
+              title = words.slice(0, 4).join(' ')
+              content = words.slice(4).join(' ')
+              if (lines.length > 1) {
+                content += ' ' + lines.slice(1).join(' ')
+              }
             } else {
-              title = withoutNumber
-              content = withoutNumber
+              title = `Point ${index + 1}`
+              content = lines.join(' ')
             }
           }
+          
+          if (title && content && content.length > 5) {
+            pointsFor.push({ title: title.trim(), content: content.trim() })
+          }
         }
-        
-        if (title && content) {
-          pointsFor.push({ title: title.trim(), content: content.trim() })
+      })
+    } else {
+      // Fallback: split by sentences or paragraphs
+      const sentences = forContent.split(/[.!?]\s+/).filter(s => s.trim().length > 10)
+      sentences.slice(0, 5).forEach((sentence, index) => {
+        const words = sentence.trim().split(' ')
+        if (words.length > 5) {
+          pointsFor.push({
+            title: `Supporting Factor ${index + 1}`,
+            content: sentence.trim()
+          })
         }
       })
     }
   }
   
-  // Parse points AGAINST
+  // Parse points AGAINST with multiple pattern attempts
   const pointsAgainst: Array<{title: string, content: string}> = []
-  const againstSectionRegex = /(?:Points|Arguments)\s+AGAINST[^:]*:([\s\S]*?)(?=$)/i
-  const againstMatch = predictionSection.match(againstSectionRegex)
   
-  if (againstMatch && againstMatch[1]) {
-    const againstContent = againstMatch[1].trim()
-    const againstMatches = againstContent.match(/(\d+\.\s*[^\n\d]*(?:\n(?!\d+\.)[^\n]*)*)/g)
+  // Try multiple patterns for AGAINST section
+  const againstPatterns = [
+    /\*\*ARGUMENTS\s+AGAINST:\*\*([\s\S]*?)(?=\*\*Sources|\*\*References|$)/i,
+    /(?:Points|Arguments|Factors|Reasons)\s+(?:AGAINST|Against)[^:]*:([\s\S]*?)(?=$)/i,
+    /(?:Arguments|Points)\s+(?:against|opposing)\s+(?:yes|YES)[^:]*:([\s\S]*?)(?=$)/i,
+    /(?:Con|Cons|Negative|Against|Opposition)\s*[:\-]?([\s\S]*?)(?=$)/i,
+    /AGAINST[:\-\s]+([\s\S]*?)(?=$)/i,
+    /(?:Points|Arguments|Factors|Reasons)\s+(?:AGAINST|Against)[^:]*:([\s\S]*?)(?=Sources|References|$)/i
+  ]
+  
+  let againstContent = ''
+  for (const pattern of againstPatterns) {
+    const match = predictionSection.match(pattern)
+    if (match && match[1] && match[1].trim()) {
+      againstContent = match[1].trim()
+      console.log('Found AGAINST section with pattern:', pattern)
+      break
+    }
+  }
+  
+  if (againstContent) {
+    // Try different numbered list patterns with better multi-line capture
+    const listPatterns = [
+      /(\d+\.\s*[^\n]*(?:\n(?!\s*\d+\.)[^\n]*)*)/g,  // Improved: captures until next numbered item
+      /(\*\s*[^\n]*(?:\n(?!\s*\*)[^\n]*)*)/g,        // Improved: captures until next bullet
+      /-\s*([^\n]*(?:\n(?!\s*-)[^\n]*)*)/g,          // Improved: captures until next dash
+      /(\w[^\n]*(?:\n(?!\s*\d+\.|[*-]|\w+:)[^\n]*)*)/g  // General pattern
+    ]
+    
+    let againstMatches: RegExpMatchArray | null = null
+    for (const pattern of listPatterns) {
+      againstMatches = againstContent.match(pattern)
+      if (againstMatches && againstMatches.length > 0) {
+        console.log('Found AGAINST items with pattern:', pattern)
+        break
+      }
+    }
     
     if (againstMatches) {
-      againstMatches.forEach((match) => {
-        const lines = match.trim().split('\n').map(line => line.trim()).filter(line => line)
-        const firstLine = lines[0] || ''
-        
-        const withoutNumber = firstLine.replace(/^\d+\.\s*/, '').trim()
-        let title = ''
-        let content = ''
-        
-        if (withoutNumber.includes(':')) {
-          const colonIndex = withoutNumber.indexOf(':')
-          title = withoutNumber.substring(0, colonIndex).trim()
-          content = withoutNumber.substring(colonIndex + 1).trim()
-          if (lines.length > 1) {
-            content += ' ' + lines.slice(1).join(' ')
-          }
-        } else {
-          if (lines.length > 1) {
-            title = withoutNumber
-            content = lines.slice(1).join(' ')
+      console.log('AGAINST matches found:', againstMatches.length)
+      againstMatches.forEach((match, index) => {
+        console.log(`AGAINST match ${index + 1}:`, match.substring(0, 100) + '...')
+        const cleanMatch = match.trim().replace(/^[\d\*\-\s]+/, '').trim()
+        if (cleanMatch) {
+          const lines = cleanMatch.split('\n').map(line => line.trim()).filter(line => line)
+          const firstLine = lines[0] || ''
+          
+          let title = ''
+          let content = ''
+          
+          if (firstLine.includes(':')) {
+            const colonIndex = firstLine.indexOf(':')
+            title = firstLine.substring(0, colonIndex).trim()
+            content = firstLine.substring(colonIndex + 1).trim()
+            if (lines.length > 1) {
+              content += ' ' + lines.slice(1).join(' ')
+            }
           } else {
-            const words = withoutNumber.split(' ')
-            if (words.length > 3) {
-              title = words.slice(0, 3).join(' ')
-              content = words.slice(3).join(' ')
+            const words = firstLine.split(' ')
+            if (words.length > 4) {
+              title = words.slice(0, 4).join(' ')
+              content = words.slice(4).join(' ')
+              if (lines.length > 1) {
+                content += ' ' + lines.slice(1).join(' ')
+              }
             } else {
-              title = withoutNumber
-              content = withoutNumber
+              title = `Point ${index + 1}`
+              content = lines.join(' ')
             }
           }
+          
+          if (title && content && content.length > 5) {
+            pointsAgainst.push({ title: title.trim(), content: content.trim() })
+          }
         }
-        
-        if (title && content) {
-          pointsAgainst.push({ title: title.trim(), content: content.trim() })
+      })
+    } else {
+      // Fallback: split by sentences or paragraphs
+      const sentences = againstContent.split(/[.!?]\s+/).filter(s => s.trim().length > 10)
+      sentences.slice(0, 5).forEach((sentence, index) => {
+        const words = sentence.trim().split(' ')
+        if (words.length > 5) {
+          pointsAgainst.push({
+            title: `Opposing Factor ${index + 1}`,
+            content: sentence.trim()
+          })
         }
       })
     }
@@ -298,6 +396,12 @@ function parseAIResponse(response: string): ParsedResponse {
     )
     sources.push(...cleanUrls)
   }
+  
+  // Final debug logging
+  console.log('=== PARSING RESULTS ===')
+  console.log('Points FOR found:', pointsFor.length)
+  console.log('Points AGAINST found:', pointsAgainst.length)
+  console.log('Sources found:', sources.length)
   
   return {
     marketInfo: { title: marketTitle, rules },
@@ -318,56 +422,163 @@ function detectMultiOutcomeMarket(marketRules: string): { isMultiOutcome: boolea
   const marketTitle = marketRules.split('\n')[0] || ''
   const lowerTitle = marketTitle.toLowerCase()
   
-  // Keywords that indicate multi-outcome markets
-  const multiOutcomeKeywords = [
-    'who will win', 'who will be', 'which will', 'winner', 'champion', 
-    'election', 'candidate', 'nominee', 'nomination', 'primary',
-    'first place', 'mvp', 'best player', 'best actor', 'best film',
-    'award winner', 'competition winner', 'tournament winner',
-    'next president', 'next governor', 'next mayor', 'next ceo',
-    'multiple choice', 'several options', 'various candidates'
+  console.log('=== MULTI-OUTCOME DETECTION ===')
+  console.log('Market title:', marketTitle)
+  console.log('Checking for multi-outcome patterns...')
+  
+  // FIRST: Check for VERY STRONG multi-outcome indicators (these always override)
+  const veryStrongMultiOutcomeKeywords = [
+    'who will win the election', 'who will be president', 'who will be elected',
+    'which candidate will win', 'which team will win the championship',
+    'who will be the next president', 'who will be the next governor',
+    'which party will control', 'who will win the presidency',
+    'who will win the oscar', 'who will win the emmy', 'who will win the grammy',
+    'winner of the election', 'winner of the championship', 'winner of the',
+    'first place will be', 'champion will be',
+    'multiple choice', 'several options', 'various candidates',
+    'choose from the following', 'select from:', 'options include:'
   ]
   
-  // Check title for multi-outcome indicators
-  for (const keyword of multiOutcomeKeywords) {
-    if (lowerTitle.includes(keyword)) {
+  for (const keyword of veryStrongMultiOutcomeKeywords) {
+    if (lowerTitle.includes(keyword) || lowerRules.includes(keyword)) {
+      console.log('Found VERY STRONG multi-outcome indicator:', keyword)
       return {
         isMultiOutcome: true,
-        reason: `Market appears to be asking "${keyword}" which typically has multiple possible outcomes`
+        reason: `Market contains "${keyword}" which clearly indicates multiple specific outcomes`
       }
     }
   }
   
-  // Check rules for multi-outcome indicators
-  for (const keyword of multiOutcomeKeywords) {
-    if (lowerRules.includes(keyword)) {
-      return {
-        isMultiOutcome: true,
-        reason: `Market rules mention "${keyword}" which suggests multiple possible outcomes`
+  // SECOND: Check for question-based multi-outcome patterns
+  const multiOutcomeQuestionPatterns = [
+    /who will (win|be|become|get|receive|take)/i,
+    /which (candidate|team|player|person|country|party) will/i,
+    /what will be the (winner|result|outcome|champion)/i,
+    /who is most likely to (win|be|become)/i,
+    /which will (win|be selected|be chosen|come first)/i
+  ]
+  
+  for (const pattern of multiOutcomeQuestionPatterns) {
+    if (pattern.test(lowerTitle)) {
+      // Check if it's NOT a simple binary question
+      const binaryOverrides = [
+        'will win against', 'will be above', 'will be below', 'will be over',
+        'will be under', 'will reach', 'will exceed', 'will happen',
+        'will be true', 'will be false', 'will succeed', 'will fail'
+      ]
+      
+      let isBinaryOverride = false
+      for (const override of binaryOverrides) {
+        if (lowerTitle.includes(override)) {
+          isBinaryOverride = true
+          break
+        }
+      }
+      
+      if (!isBinaryOverride) {
+        console.log('Found multi-outcome question pattern:', pattern)
+        return {
+          isMultiOutcome: true,
+          reason: `Market asks "${lowerTitle.match(pattern)?.[0]}" which typically has multiple possible outcomes`
+        }
       }
     }
   }
   
-  // Check for multiple named entities (likely candidates/options)
-  const properNouns = marketRules.match(/[A-Z][a-z]+\s+[A-Z][a-z]+/g) || []
+  // THIRD: Check for candidate/competitor lists in title
+  const candidatePatterns = [
+    /\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\s+(?:vs?\.?|versus|or)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\s+(?:vs?\.?|versus|or)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/,
+    /\b([A-Z][a-z]+)\s*,\s*([A-Z][a-z]+)\s*,\s*([A-Z][a-z]+)/,
+    /([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\s*\/\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\s*\/\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/
+  ]
+  
+  for (const pattern of candidatePatterns) {
+    const match = marketTitle.match(pattern)
+    if (match) {
+      console.log('Found candidate list pattern:', match[0])
+      return {
+        isMultiOutcome: true,
+        reason: `Market lists multiple candidates/options (${match.slice(1, 4).join(', ')}) indicating multiple outcomes`
+      }
+    }
+  }
+  
+  // FOURTH: Check for election/competition-specific keywords
+  const competitionKeywords = [
+    'election', 'primary', 'nomination', 'tournament', 'championship',
+    'competition', 'contest', 'race', 'award', 'prize', 'trophy',
+    'mvp', 'best actor', 'best film', 'best player', 'rookie of the year'
+  ]
+  
+  let hasCompetitionKeyword = false
+  for (const keyword of competitionKeywords) {
+    if (lowerTitle.includes(keyword) || lowerRules.includes(keyword)) {
+      hasCompetitionKeyword = true
+      break
+    }
+  }
+  
+  // If it has competition keywords AND asks "who/which", it's likely multi-outcome
+  if (hasCompetitionKeyword) {
+    const whoWhichPatterns = ['who will', 'which will', 'who is', 'which is', 'winner of']
+    for (const pattern of whoWhichPatterns) {
+      if (lowerTitle.includes(pattern)) {
+        console.log('Found competition + who/which pattern')
+        return {
+          isMultiOutcome: true,
+          reason: `Market combines competition context with "${pattern}" indicating multiple possible winners`
+        }
+      }
+    }
+  }
+  
+  // FIFTH: Check for multiple named entities in specific contexts
+  const properNouns = marketRules.match(/\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\b/g) || []
   const uniqueNames = [...new Set(properNouns)]
   
   if (uniqueNames.length >= 3) {
-    return {
-      isMultiOutcome: true,
-      reason: `Market mentions multiple people/entities (${uniqueNames.slice(0, 3).join(', ')}) suggesting multiple outcomes`
+    // Check if names appear in title and seem like options
+    const namesInTitle = uniqueNames.filter(name => marketTitle.includes(name))
+    if (namesInTitle.length >= 3) {
+      console.log('Found multiple names in title:', namesInTitle.slice(0, 3))
+      return {
+        isMultiOutcome: true,
+        reason: `Market title mentions multiple people/entities (${namesInTitle.slice(0, 3).join(', ')}) suggesting multiple outcomes`
+      }
     }
   }
   
-  // Check for percentage lists or odds for multiple options
-  const percentageMatches = marketRules.match(/\d+%/g) || []
-  if (percentageMatches.length > 2) {
-    return {
-      isMultiOutcome: true,
-      reason: `Market contains multiple percentages (${percentageMatches.slice(0, 3).join(', ')}) suggesting multiple outcomes`
+  // SIXTH: Check for option lists and multiple percentages
+  const optionPatterns = [
+    /[A-C]\)\s*[A-Z]/g,
+    /\d+\)\s*[A-Z][a-z]+/g,
+    /Option\s+[ABC]:/gi,
+    /Choice\s+\d+:/gi
+  ]
+  
+  for (const pattern of optionPatterns) {
+    const matches = marketRules.match(pattern) || []
+    if (matches.length >= 3) {
+      console.log('Found option list format:', matches.slice(0, 2))
+      return {
+        isMultiOutcome: true,
+        reason: `Market contains option list format (${matches.slice(0, 2).join(', ')}) indicating multiple choices`
+      }
     }
   }
   
+  // SEVENTH: Check for multiple percentages with names
+  const namedPercentagePattern = /\d+%\s*[-:]?\s*[A-Z][a-z]+/g
+  const percentageMatches = marketRules.match(namedPercentagePattern) || []
+  if (percentageMatches.length >= 3) {
+    console.log('Found multiple named percentages:', percentageMatches.slice(0, 3))
+    return {
+      isMultiOutcome: true,
+      reason: `Market contains multiple named percentages (${percentageMatches.slice(0, 3).join(', ')}) suggesting multiple outcomes`
+    }
+  }
+  
+  console.log('No multi-outcome patterns found - defaulting to binary')
   return { isMultiOutcome: false, reason: '' }
 }
 
@@ -385,34 +596,34 @@ export default function PredictionInterface() {
   const statValueStyles = "font-bold text-white mb-2"
   const statLabelStyles = "text-white/90"
 
-  // Reusable stat card component - currently unused, commented out to fix ESLint
-  // interface StatCardProps {
-  //   value: string | number
-  //   label: string
-  //   gradientClass: string
-  //   borderClass: string
-  //   showProgress?: boolean
-  //   valueSize?: string
-  // }
+  // Reusable stat card component
+  interface StatCardProps {
+    value: string | number
+    label: string
+    gradientClass: string
+    borderClass: string
+    showProgress?: boolean
+    valueSize?: string
+  }
 
-  // const StatCard = ({ 
-  //   value, 
-  //   label, 
-  //   gradientClass, 
-  //   borderClass, 
-  //   showProgress = false,
-  //   valueSize = "text-4xl" 
-  // }: StatCardProps) => (
-  //   <Card className={`${gradientClass} ${borderClass} card-hover`}>
-  //     <CardContent className={statCardStyles}>
-  //       <div className={`${valueSize} ${statValueStyles}`}>
-  //         {value}
-  //       </div>
-  //       <div className={statLabelStyles}>{label}</div>
-  //       {showProgress && <Progress value={Number(value)} className="mt-2" />}
-  //     </CardContent>
-  //   </Card>
-  // )
+  const StatCard = ({ 
+    value, 
+    label, 
+    gradientClass, 
+    borderClass, 
+    showProgress = false,
+    valueSize = "text-4xl" 
+  }: StatCardProps) => (
+    <Card className={`${gradientClass} ${borderClass} card-hover`}>
+      <CardContent className={statCardStyles}>
+        <div className={`${valueSize} ${statValueStyles}`}>
+          {value}
+        </div>
+        <div className={statLabelStyles}>{label}</div>
+        {showProgress && <Progress value={Number(value)} className="mt-2" />}
+      </CardContent>
+    </Card>
+  )
 
   // Loading spinner component
   const LoadingSpinner = () => (
@@ -460,7 +671,7 @@ export default function PredictionInterface() {
         
         toast({
           title: "⚠️ Multi-Outcome Market",
-          description: "This market has multiple possible outcomes. Binary analysis not available.",
+          description: "This market has multiple possible outcomes. Binary analysis is available only.",
           variant: "destructive"
         })
         
@@ -611,7 +822,7 @@ export default function PredictionInterface() {
                       </p>
                       <p className="text-gray-300 text-sm leading-relaxed">
                         This tool is designed for <strong>binary Yes/No predictions</strong> only. 
-                        Markets with multiple possible outcomes (like elections, competitions, or &quot;who will win&quot; questions) 
+                        Markets with multiple possible outcomes (like elections, competitions, or "who will win" questions) 
                         require different analysis methods.
                       </p>
                     </div>
@@ -619,9 +830,9 @@ export default function PredictionInterface() {
                     <div className="bg-blue-900/20 p-4 rounded-lg border border-blue-600/30">
                       <h4 className="text-blue-300 font-semibold mb-2">What markets work with this tool?</h4>
                       <div className="text-gray-300 text-sm space-y-1">
-                        <p>✅ &quot;Will X happen by Y date?&quot;</p>
-                        <p>✅ &quot;Will X reach Y price?&quot;</p>
-                        <p>✅ &quot;Will X be approved/rejected?&quot;</p>
+                        <p>✅ "Will X happen by Y date?"</p>
+                        <p>✅ "Will X reach Y price?"</p>
+                        <p>✅ "Will X be approved/rejected?"</p>
                         <p>✅ Any market with only <strong>YES</strong> or <strong>NO</strong> outcomes</p>
                       </div>
                     </div>
@@ -630,7 +841,7 @@ export default function PredictionInterface() {
                       <h4 className="text-purple-300 font-semibold mb-2">Coming Soon</h4>
                       <p className="text-gray-300 text-sm leading-relaxed">
                         Multi-outcome market analysis is planned for a future update. 
-                        We&apos;re working on advanced algorithms to handle complex prediction scenarios.
+                        We're working on advanced algorithms to handle complex prediction scenarios.
                       </p>
                     </div>
                     
